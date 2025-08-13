@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reading Comprehension Helper</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Custom styles to complement Tailwind */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6; /* Light gray background */
+        }
+        /* Custom scrollbar for a cleaner look */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+        /* Simple animation for the loader */
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+    </style>
+</head>
+<body class="antialiased text-gray-800">
+
+    <!-- Main Container -->
+    <div class="container mx-auto p-4 md:p-8 max-w-4xl">
+
+        <header class="text-center mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold text-gray-900">Reading Comprehension Helper</h1>
+            <p class="text-md text-gray-600 mt-2">Paste your text below and select what you want to analyze.</p>
+        </header>
+
+        <main class="bg-white p-6 rounded-2xl shadow-lg">
+            <!-- Input Text Area -->
+            <div>
+                <label for="text-input" class="block text-lg font-semibold mb-2 text-gray-700">Your Text</label>
+                <textarea id="text-input" rows="10" class="w-full p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200" placeholder="Paste your article, essay, or any text here..."></textarea>
+            </div>
+
+            <!-- Analysis Options -->
+            <div class="mt-6">
+                <h3 class="text-lg font-semibold mb-3 text-gray-700">Analysis Options</h3>
+                <div id="options-container" class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                    <label class="flex items-center p-3 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 cursor-pointer transition">
+                        <input type="checkbox" id="opt-para-main-idea" value="the main idea of each paragraph" class="h-5 w-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                        <span class="ml-3 text-sm font-medium text-gray-800">Paragraph Main Ideas</span>
+                    </label>
+                    <label class="flex items-center p-3 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 cursor-pointer transition">
+                        <input type="checkbox" id="opt-text-main-idea" value="the main idea of the entire text" class="h-5 w-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                        <span class="ml-3 text-sm font-medium text-gray-800">Overall Main Idea</span>
+                    </label>
+                    <label class="flex items-center p-3 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 cursor-pointer transition">
+                        <input type="checkbox" id="opt-true-false" value="a true or false statement based on the text" class="h-5 w-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                        <span class="ml-3 text-sm font-medium text-gray-800">True/False Statement</span>
+                    </label>
+                    <label class="flex items-center p-3 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 cursor-pointer transition">
+                        <input type="checkbox" id="opt-tone" value="the tone of the text" class="h-5 w-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                        <span class="ml-3 text-sm font-medium text-gray-800">Tone of Text</span>
+                    </label>
+                    <label class="flex items-center p-3 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 cursor-pointer transition">
+                        <input type="checkbox" id="opt-inference" value="an inference that can be drawn from the text" class="h-5 w-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                        <span class="ml-3 text-sm font-medium text-gray-800">Generated Inference</span>
+                    </label>
+                    <label class="flex items-center p-3 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 cursor-pointer transition">
+                        <input type="checkbox" id="opt-purpose" value="the purpose of the text" class="h-5 w-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                        <span class="ml-3 text-sm font-medium text-gray-800">Purpose of Text</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Analyze Button -->
+            <div class="mt-8 text-center">
+                <button id="analyze-btn" class="w-full sm:w-auto bg-blue-600 text-white font-bold py-3 px-10 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-300 transition-transform transform hover:scale-105 duration-300">
+                    Analyze Text
+                </button>
+            </div>
+
+            <!-- Results Section -->
+            <div id="results-section" class="mt-8 pt-6 border-t border-gray-200">
+                 <h3 class="text-xl font-semibold mb-4 text-gray-700">Analysis Results</h3>
+                 <div id="results-content" class="p-4 bg-gray-50 rounded-lg min-h-[100px] whitespace-pre-wrap">
+                     <p class="text-gray-500">Your analysis will appear here...</p>
+                 </div>
+            </div>
+             <!-- Error Message Box -->
+            <div id="error-box" class="hidden mt-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg">
+                <p id="error-message"></p>
+            </div>
+        </main>
+
+        <!-- History Section -->
+        <section class="mt-12">
+            <h2 class="text-2xl font-bold text-center mb-6 text-gray-900">Analysis History</h2>
+            <div id="history-box" class="space-y-6">
+                <!-- History items will be dynamically inserted here -->
+                <p class="text-center text-gray-500">No analyses yet. Your history will show up here.</p>
+            </div>
+        </section>
+
+    </div>
+
+    <script>
+        // DOM element references
+        const textInput = document.getElementById('text-input');
+        const analyzeBtn = document.getElementById('analyze-btn');
+        const optionsContainer = document.getElementById('options-container');
+        const resultsContent = document.getElementById('results-content');
+        const historyBox = document.getElementById('history-box');
+        const errorBox = document.getElementById('error-box');
+        const errorMessage = document.getElementById('error-message');
+
+        // --- Event Listener ---
+        analyzeBtn.addEventListener('click', handleAnalysis);
+
+        /**
+         * Handles the analysis process when the button is clicked.
+         * Gathers user input and selected options, then calls the AI model.
+         */
+        async function handleAnalysis() {
+            const text = textInput.value.trim();
+            const selectedOptions = Array.from(optionsContainer.querySelectorAll('input[type="checkbox"]:checked'))
+                                        .map(cb => cb.value);
+
+            // --- Input Validation ---
+            if (!text) {
+                showError("Please paste some text into the text box.");
+                return;
+            }
+            if (selectedOptions.length === 0) {
+                showError("Please select at least one analysis option.");
+                return;
+            }
+            hideError();
+
+            // --- Prepare for API Call ---
+            setLoadingState(true);
+            const prompt = createPrompt(text, selectedOptions);
+
+            try {
+                // --- Call Gemini API ---
+                const generatedText = await callGemini(prompt);
+                
+                // --- Display Results & Update History ---
+                displayResults(generatedText);
+                updateHistory(text, generatedText);
+
+            } catch (error) {
+                console.error("Error during analysis:", error);
+                showError(`An error occurred while analyzing the text. Details: ${error.message}`);
+                displayResults("Sorry, something went wrong. Please try again.");
+            } finally {
+                setLoadingState(false);
+            }
+        }
+
+        /**
+         * Creates the prompt for the Gemini API call.
+         * @param {string} text - The user's input text.
+         * @param {string[]} options - The selected analysis options.
+         * @returns {string} The formatted prompt.
+         */
+        function createPrompt(text, options) {
+            const optionsString = options.map((opt, index) => `${index + 1}. ${opt}`).join('\n');
+            return `
+                Please analyze the following text. Provide a clear and concise response for each of the requested analysis points. Format each point with a bolded heading.
+
+                TEXT TO ANALYZE:
+                ---
+                ${text}
+                ---
+
+                REQUESTED ANALYSES:
+                ${optionsString}
+            `;
+        }
+
+        /**
+         * Calls the Gemini API with exponential backoff for retries.
+         * @param {string} prompt - The prompt to send to the model.
+         * @returns {Promise<string>} The generated text from the model.
+         */
+        async function callGemini(prompt) {
+            const apiKey = ""; // API key is handled by the environment
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+            
+            const payload = {
+                contents: [{
+                    role: "user",
+                    parts: [{ text: prompt }]
+                }]
+            };
+
+            let response;
+            let attempts = 0;
+            const maxAttempts = 5;
+            let delay = 1000; // Start with 1 second
+
+            while (attempts < maxAttempts) {
+                try {
+                    response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (response.ok) {
+                        const result = await response.json();
+                        if (result.candidates && result.candidates.length > 0 &&
+                            result.candidates[0].content && result.candidates[0].content.parts &&
+                            result.candidates[0].content.parts.length > 0) {
+                            return result.candidates[0].content.parts[0].text;
+                        } else {
+                            // Handle cases where the response structure is unexpected
+                           throw new Error("Invalid response structure from API.");
+                        }
+                    } else if (response.status === 429 || response.status >= 500) {
+                        // Throttling or server error, so we retry
+                        console.warn(`Attempt ${attempts + 1} failed with status ${response.status}. Retrying in ${delay}ms...`);
+                        attempts++;
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                        delay *= 2; // Exponential backoff
+                    } else {
+                        // Other client-side error, don't retry
+                        const errorResult = await response.json();
+                        throw new Error(errorResult.error?.message || `HTTP error! status: ${response.status}`);
+                    }
+                } catch (error) {
+                    // Network errors or other fetch-related issues
+                    console.error(`Fetch error on attempt ${attempts + 1}:`, error);
+                    attempts++;
+                     if (attempts >= maxAttempts) {
+                        throw error; // Rethrow after max attempts
+                    }
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                    delay *= 2;
+                }
+            }
+            throw new Error("Failed to get a response from the API after several attempts.");
+        }
+
+
+        /**
+         * Displays the analysis results in the results section.
+         * @param {string} resultText - The text to display.
+         */
+        function displayResults(resultText) {
+            // Simple formatting: make headings bold and preserve newlines
+            const formattedHtml = resultText
+                .replace(/\*\*(.*?)\*\*/g, '<strong class="text-gray-800 font-semibold">$1</strong>') // Bold text like **Heading**
+                .replace(/\n/g, '<br>');
+            resultsContent.innerHTML = formattedHtml;
+        }
+
+        /**
+         * Updates the history box with the new analysis.
+         * @param {string} originalText - The user's input text.
+         * @param {string} analysisText - The generated analysis.
+         */
+        function updateHistory(originalText, analysisText) {
+            // Clear the placeholder if it's the first entry
+            if (historyBox.querySelector('p')) {
+                historyBox.innerHTML = '';
+            }
+
+            const historyItem = document.createElement('div');
+            historyItem.className = 'bg-white p-5 rounded-xl shadow-md';
+
+            // Sanitize and format the analysis text for history display
+            const formattedAnalysis = analysisText
+                .replace(/\*\*(.*?)\*\*/g, '<strong class="text-gray-800 font-semibold">$1</strong>')
+                .replace(/\n/g, '<br>');
+
+            historyItem.innerHTML = `
+                <div class="mb-4">
+                    <h4 class="font-bold text-md text-gray-600 mb-2">Original Text:</h4>
+                    <p class="text-sm text-gray-700 bg-gray-50 p-3 rounded-lg max-h-28 overflow-y-auto">${originalText}</p>
+                </div>
+                <div>
+                    <h4 class="font-bold text-md text-gray-600 mb-2">Generated Analysis:</h4>
+                    <div class="text-sm text-gray-800 space-y-2">${formattedAnalysis}</div>
+                </div>
+            `;
+            // Add the new item to the top of the history
+            historyBox.prepend(historyItem);
+        }
+
+        /**
+         * Manages the loading state UI.
+         * @param {boolean} isLoading - Whether to show or hide the loader.
+         */
+        function setLoadingState(isLoading) {
+            if (isLoading) {
+                analyzeBtn.disabled = true;
+                analyzeBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                resultsContent.innerHTML = '<div class="flex justify-center items-center h-full"><div class="loader"></div></div>';
+            } else {
+                analyzeBtn.disabled = false;
+                analyzeBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+        }
+        
+        /**
+         * Shows an error message to the user.
+         * @param {string} message - The error message to display.
+         */
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorBox.classList.remove('hidden');
+        }
+
+        /**
+         * Hides the error message box.
+         */
+        function hideError() {
+            errorBox.classList.add('hidden');
+        }
+
+    </script>
+</body>
+</html>
