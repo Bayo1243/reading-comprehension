@@ -70,8 +70,8 @@
                         <span class="ml-3 text-sm font-medium text-gray-800">Tone of Text</span>
                     </label>
                     <label class="flex items-center p-3 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 cursor-pointer transition">
-                        <input type="checkbox" id="opt-inference" value="an inference that can be drawn from the text" class="h-5 w-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
-                        <span class="ml-3 text-sm font-medium text-gray-800">Generated Inference</span>
+                        <input type="checkbox" id="opt-grammar" value="the grammar tenses used" class="h-5 w-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                        <span class="ml-3 text-sm font-medium text-gray-800">Grammar Analysis</span>
                     </label>
                     <label class="flex items-center p-3 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 cursor-pointer transition">
                         <input type="checkbox" id="opt-purpose" value="the purpose of the text" class="h-5 w-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
@@ -126,14 +126,12 @@
 
         /**
          * Handles the analysis process when the button is clicked.
-         * Gathers user input and selected options, then calls the local analysis function.
          */
         function handleAnalysis() {
             const text = textInput.value.trim();
             const selectedOptions = Array.from(optionsContainer.querySelectorAll('input[type="checkbox"]:checked'))
                                         .map(cb => cb.value);
 
-            // --- Input Validation ---
             if (!text) {
                 showError("Please paste some text into the text box.");
                 return;
@@ -144,18 +142,73 @@
             }
             hideError();
 
-            // --- Perform Local Analysis ---
-            // This is a synchronous operation, so no loading state is needed.
             const generatedText = performLocalAnalysis(text, selectedOptions);
-            
-            // --- Display Results & Update History ---
             displayResults(generatedText);
             updateHistory(text, generatedText);
         }
 
         /**
+         * Analyzes the text for different tones based on keywords.
+         * @param {string} text - The input text.
+         * @returns {string} The detected tone.
+         */
+        function analyzeTone(text) {
+            const tones = {
+                'Joyful': ['happy', 'joy', 'love', 'wonderful', 'beautiful', 'amazing', 'excellent'],
+                'Sad': ['sad', 'cry', 'grief', 'sorrow', 'unhappy', 'tragic', 'misery'],
+                'Angry': ['angry', 'hate', 'fury', 'rage', 'annoyed', 'frustrated'],
+                'Formal': ['therefore', 'furthermore', 'accordingly', 'consequently', 'hence'],
+                'Informative': ['because', 'explain', 'demonstrate', 'provide', 'data', 'research'],
+                'Humorous': ['funny', 'laugh', 'joke', 'hilarious', 'silly'],
+            };
+            let maxScore = 0;
+            let detectedTone = 'Neutral/Mixed';
+            const lowerCaseText = text.toLowerCase();
+
+            for (const tone in tones) {
+                let score = 0;
+                tones[tone].forEach(word => {
+                    if (lowerCaseText.includes(word)) {
+                        score++;
+                    }
+                });
+                if (score > maxScore) {
+                    maxScore = score;
+                    detectedTone = tone;
+                }
+            }
+            return detectedTone;
+        }
+
+        /**
+         * Analyzes the text for verb tenses.
+         * @param {string} text - The input text.
+         * @returns {string[]} A list of unique tenses found.
+         */
+        function analyzeTenses(text) {
+            const tenses = new Set();
+            const words = text.split(/\s+/);
+
+            // Very basic regex and keyword matching for tenses
+            if (/\b(am|is|are)\s+\w+ing\b/i.test(text)) tenses.add('Present Continuous');
+            if (/\b(was|were)\s+\w+ing\b/i.test(text)) tenses.add('Past Continuous');
+            if (/\b(have|has)\s+\w+ed\b/i.test(text) || /\b(have|has)\s+(been|gone|seen|done)\b/i.test(text)) tenses.add('Present Perfect');
+            if (/\b(had)\s+\w+ed\b/i.test(text) || /\b(had)\s+(been|gone|seen|done)\b/i.test(text)) tenses.add('Past Perfect');
+            if (/\b(will|shall)\s+\w+\b/i.test(text)) tenses.add('Future Simple');
+            
+            // Simple past (common irregulars and -ed ending)
+            if (/\w+ed\b/i.test(text) || /\b(went|saw|did|had|was|were|ate|drank)\b/i.test(text)) tenses.add('Past Simple');
+            
+            // Simple present (heuristic: check for non-past/future indicators)
+            if (tenses.size === 0 || /\b(I|you|we|they)\s+\w+[^\s]s\b/i.test(text) || /\b(he|she|it)\s+\w+s\b/i.test(text)) {
+                 tenses.add('Present Simple');
+            }
+
+            return Array.from(tenses);
+        }
+
+        /**
          * Performs a basic, offline analysis of the text based on selected options.
-         * This is a simplified simulation and does not use a real AI model.
          * @param {string} text - The user's input text.
          * @param {string[]} options - The selected analysis options.
          * @returns {string} The formatted analysis string.
@@ -163,18 +216,18 @@
         function performLocalAnalysis(text, options) {
             let analysisResult = '';
 
-            // A map of functions to perform basic analysis for each option.
             const analysisMap = {
                 'the main idea of each paragraph': () => {
                     const paragraphs = text.split(/\n+/).filter(p => p.trim() !== '');
                     if (paragraphs.length === 0) return '**Paragraph Main Ideas**\nNo paragraphs found.\n\n';
                     
                     const ideas = paragraphs.map((p, index) => {
-                        // A simple heuristic: the first sentence is often the topic sentence.
                         const sentences = p.match(/[^.!?]+[.!?]+/g) || [p];
-                        return `  - **Paragraph ${index + 1}:** ${sentences[0].trim()}`;
+                        // Heuristic: The longest sentence might contain the main idea.
+                        const longestSentence = sentences.reduce((a, b) => a.length > b.length ? a : b, "");
+                        return `  - **Paragraph ${index + 1}:** ${longestSentence.trim()}`;
                     }).join('\n');
-                    return `**Paragraph Main Ideas**\n(Note: Showing the first sentence of each paragraph)\n${ideas}\n\n`;
+                    return `**Paragraph Main Ideas**\n(Note: Showing the longest sentence of each paragraph)\n${ideas}\n\n`;
                 },
                 'the main idea of the entire text': () => {
                     const sentences = text.match(/[^.!?]+[.!?]+/g) || [text];
@@ -186,17 +239,19 @@
                     return `**True/False Statement**\nTrue: The text contains approximately ${wordCount} words.\n\n`;
                 },
                 'the tone of the text': () => {
-                    return '**Tone of Text**\nInformative (Note: This is a basic, default analysis).\n\n';
+                    const tone = analyzeTone(text);
+                    return `**Tone of Text**\nDetected Tone: ${tone} (based on keyword analysis).\n\n`;
                 },
-                'an inference that can be drawn from the text': () => {
-                    return '**Generated Inference**\n(Cannot be generated with offline analysis).\n\n';
+                'the grammar tenses used': () => {
+                    const tenses = analyzeTenses(text);
+                    const tensesList = tenses.length > 0 ? tenses.join(', ') : 'No specific tenses detected.';
+                    return `**Grammar Tense Analysis**\nDetected Tenses: ${tensesList}\n\n`;
                 },
                 'the purpose of the text': () => {
                     return '**Purpose of Text**\nTo provide information (Note: This is a basic, default analysis).\n\n';
                 }
             };
 
-            // Build the result string by calling the function for each selected option.
             options.forEach(option => {
                 if (analysisMap[option]) {
                     analysisResult += analysisMap[option]();
@@ -211,9 +266,8 @@
          * @param {string} resultText - The text to display.
          */
         function displayResults(resultText) {
-            // Simple formatting: make headings bold and preserve newlines
             const formattedHtml = resultText
-                .replace(/\*\*(.*?)\*\*/g, '<strong class="text-gray-800 font-semibold">$1</strong>') // Bold text like **Heading**
+                .replace(/\*\*(.*?)\*\*/g, '<strong class="text-gray-800 font-semibold">$1</strong>')
                 .replace(/\n/g, '<br>');
             resultsContent.innerHTML = formattedHtml;
         }
@@ -224,7 +278,6 @@
          * @param {string} analysisText - The generated analysis.
          */
         function updateHistory(originalText, analysisText) {
-            // Clear the placeholder if it's the first entry
             if (historyBox.querySelector('p')) {
                 historyBox.innerHTML = '';
             }
@@ -232,7 +285,6 @@
             const historyItem = document.createElement('div');
             historyItem.className = 'bg-white p-5 rounded-xl shadow-md';
 
-            // Sanitize and format the analysis text for history display
             const formattedAnalysis = analysisText
                 .replace(/\*\*(.*?)\*\*/g, '<strong class="text-gray-800 font-semibold">$1</strong>')
                 .replace(/\n/g, '<br>');
@@ -247,7 +299,6 @@
                     <div class="text-sm text-gray-800 space-y-2">${formattedAnalysis}</div>
                 </div>
             `;
-            // Add the new item to the top of the history
             historyBox.prepend(historyItem);
         }
         
